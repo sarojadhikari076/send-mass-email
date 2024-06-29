@@ -1,5 +1,5 @@
 'use client';
-import { Result, getDatabase } from '@/actions/sendEmail';
+import { Result, processAirtableData } from '@/actions/sendEmail';
 import { useState } from 'react';
 
 export default function Home() {
@@ -12,7 +12,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const response = await getDatabase(tableName);
+      const response = await processAirtableData(tableName);
       setResult(response);
     } catch (error) {
       alert('Error fetching data from Airtable. Please check your Base ID.');
@@ -47,12 +47,9 @@ export default function Home() {
 function Message({ result }: { result: Result }) {
   const containerClasses = `px-4 py-2 ${
     result.status === 'success' ? 'bg-green-100' : 'bg-red-100'
-  } ${
-    result.status === 'success' ? 'text-green-800' : 'text-red-800'
-  } rounded-md`;
+  } ${result.status === 'success' ? 'text-green-800' : 'text-red-800'} rounded-md`;
 
-  const messageClasses =
-    result.status === 'success' ? 'text-green-800' : 'text-red-600';
+  const messageClasses = result.status === 'success' ? 'text-green-800' : 'text-red-600';
   return (
     <div className={containerClasses}>
       <p className={messageClasses}>{result.message}</p>
