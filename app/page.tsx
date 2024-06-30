@@ -37,7 +37,10 @@ export default function Home() {
         className="p-2 border border-gray-300 rounded-md md:w-96 w-full focus-within:outline-green-500 hover:border-green-500"
         required
       />
-      <button className="py-2 px-4 bg-green-500 text-white rounded-md hover:bg-green-400 active:bg-green-600 transition-colors">
+      <button
+        className="py-2 px-4 bg-green-500 text-white rounded-md hover:bg-green-400 active:bg-green-600 transition-colors disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+        disabled={loading}
+      >
         {loading ? 'Loading...' : 'Send Emails'}
       </button>
     </form>
