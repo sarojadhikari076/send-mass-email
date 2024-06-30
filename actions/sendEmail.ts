@@ -70,13 +70,13 @@ export async function processAirtableData(tableId: string): Promise<Result> {
       })
     );
 
-    await sendEmails(emailPayloads);
-    await markTicketsAsSent(table, unsentTickets);
     await addAttendeesToAirtable(
       emailPayloads.flatMap(({ params }) => params.data),
       airtableBaseId,
       'Tickets'
     );
+    await markTicketsAsSent(table, unsentTickets);
+    await sendEmails(emailPayloads);
 
     return {
       status: 'success',
@@ -84,6 +84,7 @@ export async function processAirtableData(tableId: string): Promise<Result> {
       message: 'Emails sent successfully',
     };
   } catch (error) {
+    console.log(error);
     const message =
       (error as Error).message ||
       'Error fetching data from Airtable. Please check your table name.';
@@ -168,4 +169,36 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
     chunks.push(array.slice(i, i + chunkSize));
   }
   return chunks;
+}
+
+export async function getSentEmails() {
+  try {
+    const response = await axios.get(
+      'https://api.brevo.com/v3/smtp/statistics/events?limit=2500&offset=0&sort=desc',
+      {
+        headers: { 'api-key': emailSenderApiKey },
+      }
+    );
+    console.log(response.data);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getImageList() {
+  try {
+    const { resources } = await cloudinary.search
+      .expression(`folder:${qrFolderName} AND uploaded_at>3h`)
+      .sort_by('created_at', 'desc')
+      .max_results(200)
+      .execute();
+
+    const resourceIdsWithFirst6Chars = resources.map(({ filename }: { filename: string }) =>
+      filename.slice(0, 6)
+    );
+
+    return resourceIdsWithFirst6Chars;
+  } catch (error) {
+    console.log(error);
+  }
 }
