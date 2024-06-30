@@ -29,7 +29,7 @@ type TicketRecord = {
 
 type Attendee = {
   type: string;
-  orderId: string | number;
+  orderid: string | number;
   attendee: string;
   email: string;
   code: string;
@@ -94,7 +94,7 @@ export async function processAirtableData(tableId: string): Promise<Result> {
 async function createAttendees(
   name: string,
   email: string,
-  orderId: string | number,
+  orderid: string | number,
   ticketTypes: { [key: string]: string | number | boolean | undefined }
 ) {
   const attendeePromises = Object.entries(ticketTypes).flatMap(async ([type, quantity]) => {
@@ -106,7 +106,7 @@ async function createAttendees(
     );
     return qrCodes.map((code) => ({
       type,
-      orderId,
+      orderid,
       attendee: name,
       email,
       ...code,
