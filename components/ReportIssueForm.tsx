@@ -35,7 +35,6 @@ function ReportIssueForm({ code }: { code: string }) {
       console.error(error);
     } finally {
       setLoading(false);
-      e.currentTarget.reset();
     }
   }
 
