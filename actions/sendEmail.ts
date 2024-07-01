@@ -6,18 +6,13 @@ import qrcode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import { template } from '@/utils/emailTemplate';
 import { v2 as cloudinary } from 'cloudinary';
+import { Result } from '@/types/app';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
-export type Result = {
-  message: string;
-  status: 'success' | 'error';
-  emailCount: number;
-};
 
 type TicketRecord = {
   name: string;
@@ -43,7 +38,8 @@ type EmailPayload = {
 };
 
 const airtableApiKey = process.env.AIRTABLE_API_KEY;
-const airtableBaseId = process.env.AIRTABLE_BASE_ID as string;
+const airtableTicketBaseId = process.env.AIRTABLE_TICKET_BASE_ID as string;
+const airtableIssueBaseId = process.env.AIRTABLE_ISSUES_BASE_ID as string;
 const airtable = new Airtable({ apiKey: airtableApiKey });
 const emailSenderApiKey = process.env.EMAIL_SECRET_KEY;
 const qrFolderName = 'tpqr';
@@ -51,10 +47,11 @@ const senderEmail = process.env.EMAIL_SENDER_EMAIL;
 const senderName = process.env.EMAIL_SENDER_NAME;
 const emailSubject = process.env.EMAIL_SUBJECT;
 const emailApiEndpoint = process.env.EMAIL_API as string;
+const websiteBaseUrl = process.env.WEBSITE_BASE_URL;
 
 export async function processAirtableData(tableId: string): Promise<Result> {
   try {
-    const base = airtable.base(airtableBaseId);
+    const base = airtable.base(airtableTicketBaseId);
     const table = base(tableId);
     const records = await table.select().all();
 
@@ -72,7 +69,7 @@ export async function processAirtableData(tableId: string): Promise<Result> {
 
     await addAttendeesToAirtable(
       emailPayloads.flatMap(({ params }) => params.data),
-      airtableBaseId,
+      airtableTicketBaseId,
       'Tickets'
     );
     await markTicketsAsSent(table, unsentTickets);
@@ -80,7 +77,6 @@ export async function processAirtableData(tableId: string): Promise<Result> {
 
     return {
       status: 'success',
-      emailCount: emailPayloads.length,
       message: 'Emails sent successfully',
     };
   } catch (error) {
@@ -88,7 +84,7 @@ export async function processAirtableData(tableId: string): Promise<Result> {
     const message =
       (error as Error).message ||
       'Error fetching data from Airtable. Please check your table name.';
-    return { status: 'error', message, emailCount: 0 };
+    return { status: 'error', message };
   }
 }
 
@@ -171,34 +167,129 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
   return chunks;
 }
 
-export async function getSentEmails() {
+export const generateCompanyQRCode = async (formData: FormData) => {
+  const uniqueCode = uuidv4().slice(0, 6);
+
+  const reportUrl = `${websiteBaseUrl}/report?code=${uniqueCode}`;
+
   try {
-    const response = await axios.get(
-      'https://api.brevo.com/v3/smtp/statistics/events?limit=2500&offset=0&sort=desc',
+    const qrDataUrl = await qrcode.toDataURL(reportUrl, { errorCorrectionLevel: 'H' });
+
+    const uploadResponse = await cloudinary.uploader.upload(qrDataUrl, {
+      public_id: `${qrFolderName}/${uniqueCode}`,
+    });
+
+    const fieldSet: FieldSet = {
+      locationtype: formData.get('locationtype') as string,
+      operator: formData.get('operator') as string,
+      email: formData.get('email') as string,
+      contact: formData.get('phone') as string,
+      w3w: formData.get('what3words') as string,
+      qrcode: uploadResponse.url as string,
+      locationid: uniqueCode,
+    };
+
+    // Add the data to Airtable
+    const base = airtable.base(airtableIssueBaseId);
+    const table = base('Location');
+
+    await table.create([
       {
-        headers: { 'api-key': emailSenderApiKey },
+        fields: fieldSet,
+      },
+    ]);
+
+    return { status: 'success', message: 'QR Code generated successfully' };
+  } catch (error) {
+    console.log(error);
+    return { status: 'error', message: 'Error generating QR Code' };
+  }
+};
+
+export const reportIssue = async (formData: FormData) => {
+  const base = airtable.base(airtableIssueBaseId);
+  const uniqueCode = formData.get('code') as string;
+  const issueType = formData.get('issueType') as string;
+  const issue = formData.get('issue') as string;
+  const image = formData.get('image') as File;
+
+  const reportRecord = await base('Location')
+    .select({
+      filterByFormula: `{locationid} = '${uniqueCode}'`,
+    })
+    .firstPage();
+
+  if (reportRecord.length === 0) {
+    return { status: 'error', message: 'Location not found. Please re-scan the QR code.' };
+  }
+
+  const location = reportRecord.map((record) => record.fields)[0];
+
+  try {
+    const table = base('Reports');
+    let imageUrl = '';
+
+    if (image && image.size > 0) {
+      const imageToDataURL = async (image: File): Promise<string> => {
+        const fileBuffer = await image.arrayBuffer();
+        const base64String = Buffer.from(fileBuffer).toString('base64');
+        const mimeType = image.type;
+        return `data:${mimeType};base64,${base64String}`;
+      };
+
+      const imageDataURL = await imageToDataURL(image);
+
+      const uploadResponse = await cloudinary.uploader.upload(imageDataURL, {
+        public_id: `${qrFolderName}/${uniqueCode}/${uuidv4()}`,
+      });
+
+      imageUrl = uploadResponse.url;
+    }
+
+    await table.create([
+      {
+        fields: {
+          issuetype: issueType === 'Other' ? issue : issueType,
+          contact: location.contact,
+          locationtype: location.locationtype,
+          w3w: location.w3w,
+          operator: location.operator,
+          image: imageUrl,
+        },
+      },
+    ]);
+
+    if (location.contact) {
+      const msgText = `New issue reported at ${location.w3w}. - ${issueType} - ${issue}`;
+      await sendSMS(location.contact as string, msgText);
+    }
+
+    return { status: 'success', message: 'Issue reported successfully' };
+  } catch (error) {
+    console.log(error);
+    const result: Result = { status: 'error', message: 'Error reporting issue' };
+    return result;
+  }
+};
+
+export const sendSMS = async (phone: string, msg: string) => {
+  const smsApiEndpoint = process.env.SMS_API_ENDPOINT as string;
+  const smsApiKey = process.env.SMS_API_KEY;
+  try {
+    await axios.post(
+      smsApiEndpoint,
+      {
+        to: phone,
+        from: 'EIR System',
+        msg,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${smsApiKey}`,
+        },
       }
     );
-    console.log(response.data);
   } catch (error) {
     console.log(error);
   }
-}
-
-export async function getImageList() {
-  try {
-    const { resources } = await cloudinary.search
-      .expression(`folder:${qrFolderName} AND uploaded_at>3h`)
-      .sort_by('created_at', 'desc')
-      .max_results(200)
-      .execute();
-
-    const resourceIdsWithFirst6Chars = resources.map(({ filename }: { filename: string }) =>
-      filename.slice(0, 6)
-    );
-
-    return resourceIdsWithFirst6Chars;
-  } catch (error) {
-    console.log(error);
-  }
-}
+};
