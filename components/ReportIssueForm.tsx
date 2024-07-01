@@ -31,7 +31,6 @@ function ReportIssueForm({ code }: { code: string }) {
       const response = await reportIssue(formData);
       setResult(response);
     } catch (error) {
-      alert('Error reporting issue. Please try again');
       console.error(error);
     } finally {
       setLoading(false);
