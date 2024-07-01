@@ -283,7 +283,11 @@ export const reportIssue = async (formData: FormData) => {
     ]);
 
     if (location.contact) {
-      const msgText = `New issue reported at ${location.w3w}. - ${issueType} - ${issue}`;
+      let msgText = `New issue reported at ${location.w3w}. - ${issueType}`;
+      if (issueType === 'Other') {
+        msgText = msgText + `: ${issue}`;
+      }
+
       await sendSMS(location.contact as string, msgText);
     }
 
