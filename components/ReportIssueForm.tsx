@@ -41,7 +41,7 @@ function ReportIssueForm({ code }: { code: string }) {
 
   return (
     <div className="mx-auto max-w-md bg-white shadow sm:rounded-md p-4">
-      <h1 className="text-2xl font-bold text-green-500">Report an issue</h1>
+      <h1 className="text-xl font-bold text-green-500">Report an issue</h1>
       <p className="text-sm text-gray-600 mb-2">
         Let us know about the issue below at this facility.
       </p>

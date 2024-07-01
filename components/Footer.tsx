@@ -3,18 +3,12 @@ import React from 'react';
 
 function Footer() {
   return (
-    <footer className="max-w-sm">
-      <p className="text-center text-gray-600">
-        Powered by
-        <Image src="/logo.svg" alt="Logo" width={50} height={50} className="inline h-4 ml-2" />
-      </p>
-      <p className="text-center text-gray-600 text-sm">
-        Learn more about this feature on{' '}
-        <a href="https://ticketpulse.co.uk" className="text-green-500">
-          Ticket Pulse
-        </a>
-        .
-      </p>
+    <footer className="flex items-center justify-center gap-2 flex-wrap">
+      <p className="text-gray-600 text-xs">Powered by</p>
+      <Image src="/logo.svg" alt="Logo" width={40} height={40} className="inline h-4 ml-2" />
+      <a href="https://ticketpulse.co.uk" className="text-center text-xs underline text-gray-600">
+        Learn more about us
+      </a>
     </footer>
   );
 }

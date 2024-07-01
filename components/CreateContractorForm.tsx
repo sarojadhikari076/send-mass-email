@@ -16,6 +16,8 @@ function CreateContractorForm() {
       const response = await generateCompanyQRCode(data);
       setResult(response);
     } catch (error) {
+      console.error(error);
+    } finally {
       setLoading(false);
     }
   }

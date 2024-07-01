@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { template } from '@/utils/emailTemplate';
 import { v2 as cloudinary } from 'cloudinary';
 import { Result } from '@/types/app';
+import sharp from 'sharp';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -173,11 +174,33 @@ export const generateCompanyQRCode = async (formData: FormData) => {
   const reportUrl = `${websiteBaseUrl}/report?code=${uniqueCode}`;
 
   try {
-    const qrDataUrl = await qrcode.toDataURL(reportUrl, { errorCorrectionLevel: 'H' });
+    const qrSvg = await qrcode.toString(reportUrl, { type: 'svg', errorCorrectionLevel: 'H' });
+    const qrSvgBuffer = Buffer.from(qrSvg);
 
-    const uploadResponse = await cloudinary.uploader.upload(qrDataUrl, {
-      public_id: `${qrFolderName}/${uniqueCode}`,
-    });
+    const posterImageUrl =
+      'https://res.cloudinary.com/dlsj2pkpa/image/upload/v1719847119/postermask.jpg';
+
+    const response = await fetch(posterImageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    const posterImageBuffer = Buffer.from(arrayBuffer);
+
+    const finalImageBuffer = await sharp(posterImageBuffer)
+      .composite([
+        {
+          input: await sharp(qrSvgBuffer).resize(380, 380).toBuffer(),
+          gravity: 'north',
+          top: 703,
+          left: 245,
+        },
+      ])
+      .toBuffer();
+
+    const finalUploadResponse = await cloudinary.uploader.upload(
+      `data:image/png;base64,${finalImageBuffer.toString('base64')}`,
+      {
+        public_id: `${qrFolderName}/${uniqueCode}`,
+      }
+    );
 
     const fieldSet: FieldSet = {
       locationtype: formData.get('locationtype') as string,
@@ -185,7 +208,7 @@ export const generateCompanyQRCode = async (formData: FormData) => {
       email: formData.get('email') as string,
       contact: formData.get('phone') as string,
       w3w: formData.get('what3words') as string,
-      qrcode: uploadResponse.url as string,
+      qrcode: finalUploadResponse.url,
       locationid: uniqueCode,
     };
 
