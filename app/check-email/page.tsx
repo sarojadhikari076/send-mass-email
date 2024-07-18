@@ -1,17 +1,7 @@
 'use client';
 import { fetchRecordByEmail } from '@/actions/sendEmail';
 import { Result } from '@/types/app';
-import {
-  FormControl,
-  FormLabel,
-  Input,
-  Button,
-  Stack,
-  Typography,
-  Alert,
-  Link,
-  Box,
-} from '@mui/joy';
+import { FormControl, FormLabel, Input, Button, Stack, Typography, Alert } from '@mui/joy';
 import { useState } from 'react';
 
 export default function CheckEmailSatatus() {
@@ -41,7 +31,7 @@ export default function CheckEmailSatatus() {
 
   return (
     <Stack gap={2} width={{ xs: 1, md: 400 }}>
-      <Typography level="title-md" textAlign="center">
+      <Typography level="title-lg" textAlign="center">
         Check the status of your tickets and resend them to your email address.
       </Typography>
       {result && (
@@ -50,36 +40,41 @@ export default function CheckEmailSatatus() {
       <FormControl>
         <FormLabel>Email Address or Order ID</FormLabel>
         <Input
-          placeholder="Enter email address or order ID"
+          placeholder="e.g. johndoe@gmail.com or #123456"
           type="text"
           name="field"
           required
-          size="lg"
           autoFocus
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           endDecorator={
-            <Button type="submit" loading={loading} onClick={() => handleEmailSubmission(false)}>
+            <Button
+              type="submit"
+              loading={loading}
+              onClick={() => handleEmailSubmission(false)}
+              color="success"
+            >
               Check
             </Button>
           }
         />
       </FormControl>
       {result && result.status === 'success' && (
-        <Button onClick={() => handleEmailSubmission(true)} loading={loading}>
+        <Button onClick={() => handleEmailSubmission(true)} loading={loading} color="success">
           Resend Tickets
         </Button>
       )}
       {result && result.status === 'error' && (
         <Stack alignItems="center" gap={1}>
           <Typography level="body-xs" textAlign="center">
-            If you still having no luck, please check your junk/spam or&nbsp;
+            If you still having no luck, please check your junk/spam folders or&nbsp;
           </Typography>
           <Button
             component="a"
+            color="danger"
             href="https://airtable.com/appZoMAdkFw8Jtnsg/pag0kHEBAE9hFiTlN/form"
           >
-            click here
+            Request Support
           </Button>
         </Stack>
       )}

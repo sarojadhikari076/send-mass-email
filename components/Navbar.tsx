@@ -6,11 +6,10 @@ function Navbar() {
       <Image
         src="/vegan-campout-logo.png"
         alt="Logo"
-        width={32}
-        height={32}
-        className="object-contain"
+        width={80}
+        height={80}
+        className="object-cover"
       />
-      <h3 className="text-sm text-black font-bold">Vegan Camp Out 2024</h3>
     </div>
   );
 }
