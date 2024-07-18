@@ -42,6 +42,7 @@ const airtableApiKey = process.env.AIRTABLE_API_KEY;
 const airtableTicketBaseId = process.env.AIRTABLE_TICKET_BASE_ID as string;
 const airtableIssueBaseId = process.env.AIRTABLE_ISSUES_BASE_ID as string;
 const airtable = new Airtable({ apiKey: airtableApiKey });
+const base = airtable.base(airtableTicketBaseId);
 const emailSenderApiKey = process.env.EMAIL_SECRET_KEY;
 const qrFolderName = 'tpqr';
 const senderEmail = process.env.EMAIL_SENDER_EMAIL;
@@ -54,7 +55,6 @@ const smsApiKey = process.env.SMS_API_KEY;
 
 export async function processAirtableData(tableId: string) {
   try {
-    const base = airtable.base(airtableTicketBaseId);
     const table = base(tableId);
     const records = await table.select().all();
 
@@ -332,7 +332,6 @@ export type ResendEmailRecord = {
 };
 
 export const fetchRecordByEmail = async (field: string, sendEmail = false) => {
-  const base = airtable.base(airtableTicketBaseId);
   const table = base('site-tickets');
 
   // Search for the record with the provided email, emailp or Order ID field

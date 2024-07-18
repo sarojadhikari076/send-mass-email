@@ -1,7 +1,17 @@
 'use client';
 import { fetchRecordByEmail } from '@/actions/sendEmail';
 import { Result } from '@/types/app';
-import { FormControl, FormLabel, Input, Button, Stack, Typography, Alert, Link } from '@mui/joy';
+import {
+  FormControl,
+  FormLabel,
+  Input,
+  Button,
+  Stack,
+  Typography,
+  Alert,
+  Link,
+  Box,
+} from '@mui/joy';
 import { useState } from 'react';
 
 export default function CheckEmailSatatus() {
@@ -31,13 +41,16 @@ export default function CheckEmailSatatus() {
 
   return (
     <Stack gap={2} width={{ xs: 1, md: 400 }}>
+      <Typography level="title-md" textAlign="center">
+        Check the status of your tickets and resend them to your email address.
+      </Typography>
       {result && (
         <Alert color={result.status === 'success' ? 'success' : 'danger'}>{result.message}</Alert>
       )}
-      <FormControl sx={{ mb: 10 }}>
-        <FormLabel>Check ticket status</FormLabel>
+      <FormControl>
+        <FormLabel>Email Address or Order ID</FormLabel>
         <Input
-          placeholder="Enter Email Address or Order ID"
+          placeholder="Enter email address or order ID"
           type="text"
           name="field"
           required
@@ -53,19 +66,21 @@ export default function CheckEmailSatatus() {
         />
       </FormControl>
       {result && result.status === 'success' && (
-        <Stack gap={1}>
-          <Typography level="body-sm">
-            If you have not received the email, you can resend the tickets to the email address.
-          </Typography>
-          <Button onClick={() => handleEmailSubmission(true)} loading={loading}>
-            Resend Tickets
-          </Button>
+        <Button onClick={() => handleEmailSubmission(true)} loading={loading}>
+          Resend Tickets
+        </Button>
+      )}
+      {result && result.status === 'error' && (
+        <Stack alignItems="center" gap={1}>
           <Typography level="body-xs" textAlign="center">
-            If you still having no luck, please check your junk/spam or email us at&nbsp;
-            <Link href="mailto:tickets@vegancampouttickets.com">
-              tickets@vegancampouttickets.com
-            </Link>
+            If you still having no luck, please check your junk/spam or&nbsp;
           </Typography>
+          <Button
+            component="a"
+            href="https://airtable.com/appZoMAdkFw8Jtnsg/pag0kHEBAE9hFiTlN/form"
+          >
+            click here
+          </Button>
         </Stack>
       )}
     </Stack>
