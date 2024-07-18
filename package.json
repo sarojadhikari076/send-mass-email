@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/joy": "^5.0.0-beta.48",
     "airtable": "^0.12.2",
     "axios": "^1.7.2",
     "cloudinary": "^2.2.0",
@@ -16,6 +19,7 @@
     "qrcode": "^1.5.3",
     "react": "^18",
     "react-dom": "^18",
+    "react-toastify": "^10.0.5",
     "sharp": "^0.33.4",
     "uuid": "^10.0.0"
   },

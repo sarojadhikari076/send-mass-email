@@ -49,8 +49,10 @@ const senderName = process.env.EMAIL_SENDER_NAME;
 const emailSubject = process.env.EMAIL_SUBJECT;
 const emailApiEndpoint = process.env.EMAIL_API as string;
 const websiteBaseUrl = process.env.WEBSITE_BASE_URL;
+const smsApiEndpoint = process.env.SMS_API_ENDPOINT as string;
+const smsApiKey = process.env.SMS_API_KEY;
 
-export async function processAirtableData(tableId: string): Promise<Result> {
+export async function processAirtableData(tableId: string) {
   try {
     const base = airtable.base(airtableTicketBaseId);
     const table = base(tableId);
@@ -113,7 +115,7 @@ async function createAttendees(
   return (await Promise.all(attendeePromises)).flat();
 }
 
-async function generateQRCode(): Promise<{ code: string; imageUrl: string }> {
+async function generateQRCode() {
   const uniqueCode = uuidv4();
   const shortCode = uniqueCode.slice(0, 6);
 
@@ -128,7 +130,7 @@ async function generateQRCode(): Promise<{ code: string; imageUrl: string }> {
   return { code: shortCode, imageUrl: uploadResponse.url };
 }
 
-async function sendEmails(emailPayloads: EmailPayload[]): Promise<void> {
+async function sendEmails(emailPayloads: EmailPayload[]) {
   const emailPayload = {
     sender: { email: senderEmail, name: senderName },
     subject: emailSubject,
@@ -300,8 +302,6 @@ export const reportIssue = async (formData: FormData) => {
 };
 
 export const sendSMS = async (phone: string, msg: string) => {
-  const smsApiEndpoint = process.env.SMS_API_ENDPOINT as string;
-  const smsApiKey = process.env.SMS_API_KEY;
   try {
     await axios.post(
       smsApiEndpoint,
@@ -319,4 +319,107 @@ export const sendSMS = async (phone: string, msg: string) => {
   } catch (error) {
     console.log(error);
   }
+};
+
+export type ResendEmailRecord = {
+  'Order ID': string;
+  'Security Code': string;
+  Ticket: string;
+  attendee: string;
+  email: string;
+  emailp: string;
+  namep: string;
+};
+
+export const fetchRecordByEmail = async (field: string, sendEmail = false) => {
+  const base = airtable.base(airtableTicketBaseId);
+  const table = base('site-tickets');
+
+  // Search for the record with the provided email, emailp or Order ID field
+  const records = await table
+    .select({
+      filterByFormula: `
+      OR(
+        {email} = '${field}',
+        {emailp} = '${field}',
+        {Order ID} = '${field}'
+      )
+      `,
+    })
+    .all();
+
+  if (records.length === 0) {
+    return {
+      status: 'error',
+      message: `
+      Sorry we couldn't find any ticket with the provided email or order ID (${field}).
+      Maybe the email was entered incorrectly during purchase.
+      `,
+    };
+  }
+
+  if (sendEmail) {
+    const record = records.map((record) => record.fields) as ResendEmailRecord[];
+
+    // Upload the QR code to Cloudinary and append the URL to the record
+    const qrCodeUploads = await Promise.all(
+      record.map(async (r) => {
+        const qrCode = r['Security Code'];
+
+        const qrDataUrl = await qrcode.toDataURL(qrCode, {
+          errorCorrectionLevel: 'H',
+          scale: 10,
+        });
+
+        const uploadResponse = await cloudinary.uploader.upload(qrDataUrl, {
+          public_id: `${qrFolderName}/${qrCode}`,
+        });
+
+        return { ...r, code: qrCode, type: r.Ticket, imageUrl: uploadResponse.url };
+      })
+    );
+
+    // Group the records by the email address
+    const groupedRecords = qrCodeUploads.reduce((acc, curr) => {
+      const email = curr.email || curr.emailp;
+      if (acc[email] === undefined) {
+        acc[email] = [];
+      }
+      acc[email].push(curr);
+      return acc;
+    }, {} as Record<string, ResendEmailRecord[]>);
+
+    // Send the email to the email address
+    const emailPayloads = Object.entries(groupedRecords).map(([email, records]) => {
+      const emailPayload = {
+        sender: { email: senderEmail, name: senderName },
+        subject: emailSubject,
+        htmlContent: template,
+        messageVersions: [
+          {
+            to: [{ email, name: records[0].attendee }],
+            params: { data: records },
+          },
+        ],
+      };
+
+      return axios.post(emailApiEndpoint, emailPayload, {
+        headers: { 'api-key': emailSenderApiKey },
+      });
+    });
+
+    await Promise.all(emailPayloads);
+
+    return {
+      status: 'success',
+      message: `Email with ${records.length} ticket${
+        records.length > 1 ? 's' : ''
+      } have been sent successfully to ${field}`,
+    };
+  }
+
+  return {
+    status: 'success',
+    message: `${records.length} ticket${records.length > 1 ? 's' : ''} found for ${field}`,
+  };
 };
