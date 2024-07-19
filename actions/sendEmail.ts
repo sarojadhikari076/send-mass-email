@@ -334,15 +334,15 @@ export type ResendEmailRecord = {
 export const fetchRecordByEmail = async (field: string, sendEmail = false) => {
   const table = base('site-tickets');
 
-  // Search for the record with the provided email, emailp or Order ID field
+  // Search for the record with the provided email, emailp or Order ID field case-insensitively
   const records = await table
     .select({
       filterByFormula: `
       OR(
-        {email} = '${field}',
-        {emailp} = '${field}',
+        LOWER({email}) = LOWER('${field}'),
+        LOWER({emailp}) = LOWER('${field}'),
         {Order ID} = '${field}'
-      )
+        )
       `,
     })
     .all();
