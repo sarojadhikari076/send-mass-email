@@ -1,4 +1,4 @@
-export const emailTemplateHTML = `
+export const emailTemplatePdf = `
 <!DOCTYPE html>
 <html lang="en">
 
@@ -23,11 +23,6 @@ export const emailTemplateHTML = `
         background-color: #f7f7f7;
         margin: 0 auto;
         padding: 0;
-      }
-
-      .ticket-content {
-        padding: 20px;
-        background-color: #f7f7f7;
       }
 
       .ticket-details h6,
@@ -80,7 +75,7 @@ export const emailTemplateHTML = `
       .ticket-footer a {
         font-weight: normal;
         display: block;
-        margin-top: 20px;
+        margin-middle: 20px;
         font-family: 'Helvetica Neue', Helvetica, sans-serif;
         font-size: 13px;
         text-decoration: underline;
@@ -104,13 +99,13 @@ export const emailTemplateHTML = `
   <body>
     <table class="wrapper" align="center" width="620">
       <tr>
-        <td align="center" valign="top" class="wrapper">
+        <td align="center" valign="middle" class="wrapper">
           <table class="inner-wrapper" border="0" cellpadding="0" cellspacing="0" width="620" bgcolor="#f7f7f7" align="center">
             <tr>
-              <td valign="top" class="ticket-content" align="left" width="580">
+              <td valign="middle" class="ticket-content" align="left" width="580">
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" align="center">
                   <tr>
-                    <td valign="top" align="center" width="100%">
+                    <td valign="middle" align="center" width="100%">
                       <h2>
                         <a href="https://vegancampouttickets.com/?post_type=tribe_events&p=21798%2F/" style="font-weight: normal; text-decoration: underline; border: 0; color: #0a0a0e;">
                           Vegan Camp Out 2024
@@ -125,11 +120,11 @@ export const emailTemplateHTML = `
                 <div class="whiteSpace"></div>
                 <table class="ticket-venue" border="0" cellpadding="0" cellspacing="0" width="100%" align="center">
                   <tr>
-                    <td class="ticket-venue" valign="top" align="left" width="300">
+                    <td class="ticket-venue" valign="middle" align="left" width="300">
                       <h6>Venue</h6>
                       <table class="venue-details" border="0" cellpadding="0" cellspacing="0" width="100%" align="center">
                         <tr>
-                          <td class="ticket-venue-child" valign="top" align="left" width="130">
+                          <td class="ticket-venue-child" valign="middle" align="left" width="130">
                             <span>Bicester Heritage</span>
                             <span>
                               Bicester Heritage<br>
@@ -139,7 +134,7 @@ export const emailTemplateHTML = `
                         </tr>
                       </table>
                     </td>
-                    <td class="ticket-organizer" valign="top" align="left" width="140">
+                    <td class="ticket-organizer" valign="middle" align="left" width="140">
                       <h6>Organiser</h6>
                       <span>VCO</span>
                     </td>
@@ -147,7 +142,7 @@ export const emailTemplateHTML = `
                 </table>
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" align="center">
                   <tr>
-                    <td class="ticket-footer" valign="top" align="left" width="100%">
+                    <td class="ticket-footer" valign="middle" align="left" width="100%">
                       <a href="https://vegancampouttickets.com">https://vegancampouttickets.com</a>
                     </td>
                   </tr>
@@ -155,29 +150,23 @@ export const emailTemplateHTML = `
               </td>
             </tr>
           </table>
-          {% for ticket in params.data %}
-          <table class="inner-wrapper" border="0" cellpadding="0" cellspacing="0" width="620" bgcolor="#f7f7f7" align="center" style="margin: 15px auto 0; padding: 0;">
-            <tr>
-              <td valign="top" class="ticket-content" align="left" width="140" bgcolor="#f7f7f7">
-                <img src="{{ticket.imageUrl}}" width="140" height="140" alt="{{ticket.code}}" class="qr-code">
-              </td>
-              <td valign="top" class="ticket-organizer ticket-content" align="left" bgcolor="#f7f7f7">
-                <h6>Attendee</h6>
-                <span>
-                  {{ticket.attendee}}
-                </span>
-                <br>
-                <span>
-                  {{ticket.type}}
-                </span>
-                <br>
-                <span>
-                  {{ticket.code}}
-                </span>
-              </td>
-            </tr>
-          </table>
-          {% endfor %}
+          {{#each data}}
+              <table class="inner-wrapper" border="0" cellpadding="0" cellspacing="0" bgcolor="#f7f7f7" align="center">
+                <tr>
+                  <td valign="middle" class="ticket-content" align="left" width="140" bgcolor="#f7f7f7">
+                    <img src="{{this.imageUrl}}" width="140" height="140" alt="{{this.code}}" class="qr-code">
+                  </td>
+                  <td valign="middle" class="ticket-organizer ticket-content" align="left" bgcolor="#f7f7f7">
+                    <h6>Attendee</h6>
+                    <span>{{this.attendee}}</span>
+                    <br>
+                    <span>{{this.type}}</span>
+                    <br>
+                    <span>{{this.code}}</span>
+                  </td>
+                </tr>
+              </table>
+          {{/each}}
         </td>
       </tr>
     </table>
