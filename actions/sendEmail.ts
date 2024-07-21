@@ -67,8 +67,6 @@ export async function processAirtableData(tableId: string) {
       })
       .all();
 
-    console.log(records);
-
     const unsentTickets = records.map((record) => ({ fields: record.fields, recordId: record.id }));
 
     if (unsentTickets.length === 0) {
