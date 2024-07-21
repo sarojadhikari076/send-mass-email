@@ -66,6 +66,13 @@ export async function processAirtableData(tableId: string) {
       .map((record) => ({ fields: record.fields, recordId: record.id }))
       .filter((record) => !record.fields.sentticket);
 
+    if (unsentTickets.length === 0) {
+      return {
+        status: 'error',
+        message: 'No unsent tickets found',
+      };
+    }
+
     const emailPayloads = await Promise.all(
       unsentTickets.map(async ({ fields, recordId }) => {
         const { name, email, orderid, ...ticketTypes } = fields as TicketRecord;
