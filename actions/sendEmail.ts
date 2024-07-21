@@ -59,12 +59,17 @@ const smsApiKey = process.env.SMS_API_KEY;
 export async function processAirtableData(tableId: string) {
   try {
     const table = base(tableId);
-    // fetch 5 records from the table
-    const records = await table.select({ maxRecords: 5 }).all();
+    // fetch 5 records from the table where sentticket is false
+    const records = await table
+      .select({
+        filterByFormula: '{sentticket} = FALSE()',
+        maxRecords: 5,
+      })
+      .all();
 
-    const unsentTickets = records
-      .map((record) => ({ fields: record.fields, recordId: record.id }))
-      .filter((record) => !record.fields.sentticket);
+    console.log(records);
+
+    const unsentTickets = records.map((record) => ({ fields: record.fields, recordId: record.id }));
 
     if (unsentTickets.length === 0) {
       return {
