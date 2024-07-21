@@ -59,7 +59,8 @@ const smsApiKey = process.env.SMS_API_KEY;
 export async function processAirtableData(tableId: string) {
   try {
     const table = base(tableId);
-    const records = await table.select().all();
+    // fetch 5 records from the table
+    const records = await table.select({ maxRecords: 5 }).all();
 
     const unsentTickets = records
       .map((record) => ({ fields: record.fields, recordId: record.id }))
