@@ -5,12 +5,9 @@ import axios from 'axios';
 import qrcode from 'qrcode';
 import { v4 as uuidv4 } from 'uuid';
 import { emailTemplateHTML } from '@/utils/emailTemplate';
-import { emailTemplatePdf } from '@/utils/emailTemplatePdf';
 import { v2 as cloudinary } from 'cloudinary';
 import { Result } from '@/types/app';
 import sharp from 'sharp';
-import puppeteer from 'puppeteer';
-import handlebars from 'handlebars';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -408,10 +405,6 @@ export const fetchRecordByEmail = async (field: string, sendEmail = false) => {
         sender: { email: senderEmail, name: senderName },
         subject: emailSubject,
         htmlContent: emailTemplateHTML,
-        attachments: records.map((record) => ({
-          filename: `Vegan Camp Out 2024 Ticket - ${record['Security Code']}.pdf`,
-          content: generateEmailPDF(records),
-        })),
         messageVersions: [
           {
             to: [{ email, name: records[0].attendee }],
@@ -439,22 +432,4 @@ export const fetchRecordByEmail = async (field: string, sendEmail = false) => {
     status: 'success',
     message: `${records.length} ticket${records.length > 1 ? 's' : ''} found for ${field}`,
   };
-};
-
-// Convert handlebars template to HTML, then convert to PDF and return the base64 encoded string
-export const generateEmailPDF = async (data: unknown) => {
-  const template = handlebars.compile(emailTemplatePdf);
-  const html = template({ data });
-
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.setContent(html);
-  const pdf = await page.pdf({
-    format: 'A4',
-    margin: { top: '50px', bottom: '20px' },
-  });
-
-  await browser.close();
-
-  return pdf.toString('base64');
 };
